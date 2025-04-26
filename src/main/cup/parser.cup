@@ -6,34 +6,141 @@ class Parser;
 
 
 // Terminals
-terminal ASSIG;
-terminal PLUS;
-terminal SUB;
-terminal MULT;
-terminal DIV;
-terminal OPEN_BRACKET;
-terminal CLOSE_BRACKET;
-terminal INTEGER_CONSTANT;
-terminal IDENTIFIER;
+terminal ID;
+terminal CTE_ENTERA;
+terminal CTE_FLOTANTE;
+terminal CTE_CADENA;
+
+terminal OP_SUMA;
+terminal OP_RESTA;
+terminal OP_MULT;
+terminal OP_DIV;
+terminal OP_ASIG;
+terminal OP_TIPO;
+terminal COMP_MEN;
+terminal COMP_MAY;
+
+terminal COMA;
+terminal PAR_ABRIR;
+terminal PAR_CERRAR;
+terminal LLAVE_ABRIR;
+terminal LLAVE_CERRAR;
+
+terminal IF;
+terminal ELSE;
+terminal WHILE;
+terminal AND;
+terminal OR;
+terminal NOT;
+terminal WRITE;
+terminal READ;
+terminal INIT;
+
+terminal DT_FLOAT;
+terminal DT_INT;
+terminal DT_STRING;
 
 // Non Terminals
-non terminal sentence;
-non terminal assignment;
-non terminal expression;
-non terminal term;
-non terminal factor;
+non terminal programa, lista_sentencias, sentencia;
+non terminal asignacion, if, while, declaracion, io;
+non terminal lista_declaraciones, declaracion_simple, lista_variables, tipo_variable;
+non terminal expresion, termino, factor, constante; // operaciones
+non terminal condicion, expresion_logica, operador_relacional; // if
+non terminal lectura, escritura; // io
 
 // Start Symbol Definition
-start with sentence;
+start with programa;
 
-sentence ::= assignment {: System.out.println("End"); :};
-assignment ::= IDENTIFIER ASSIG expression {: System.out.println("Assignment"); :};
-expression ::= expression PLUS term {: System.out.println("+"); :};
-expression ::= expression SUB term {: System.out.println("-"); :};
-expression ::= term {: System.out.println("Expression = Term"); :};
-term ::= term MULT factor {: System.out.println("*"); :};
-term ::= term DIV factor {: System.out.println("/"); :};
-term ::= factor {: System.out.println("Term = factor"); :};
-factor ::= IDENTIFIER:id  {: System.out.println("Id: " + id); :};
-factor ::= INTEGER_CONSTANT:constant {: System.out.println("Constant: " + constant ); :};
-factor ::= OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Factor = (Expression)"); :};
+programa ::= lista_sentencias;
+
+lista_sentencias ::= sentencia lista_sentencias
+                    | sentencia;
+
+sentencia ::= declaracion
+            | asignacion
+            | if
+            | while
+            | io;
+
+declaracion ::= INIT LLAVE_ABRIR lista_declaraciones LLAVE_CERRAR
+                {: System.out.println("Bloque de declaracion de variables"); :};
+
+lista_declaraciones ::= declaracion_simple
+                      | lista_declaraciones declaracion_simple;
+
+declaracion_simple ::= lista_variables OP_TIPO tipo_variable;
+
+lista_variables ::= lista_variables COMA ID:id
+                    {: System.out.println("Declaracion anidada (,) " + id); :}
+                | ID:id
+                    {: System.out.println("Id: " + id); :};
+
+tipo_variable ::= DT_FLOAT
+                    {: System.out.println("Declaracion Float"); :}
+                | DT_INT
+                    {: System.out.println("Declaracion Int"); :}
+                | DT_STRING
+                    {: System.out.println("Declaracion String"); :};
+
+asignacion ::= ID:id OP_ASIG expresion
+                {: System.out.println("Id: '" + id + "' Asignacion \n"); :};
+
+expresion ::= expresion OP_SUMA termino
+              {: System.out.println("Suma"); :}
+            | expresion OP_RESTA termino
+                {: System.out.println("Resta"); :}
+            | termino
+                {: System.out.println("Expresion simple"); :};
+
+termino ::= termino OP_MULT factor
+             {: System.out.println("Multiplicacion"); :}
+            | termino OP_DIV factor
+                {: System.out.println("Division"); :}
+            | factor
+                {: System.out.println("Termino simple"); :};
+
+factor ::= constante
+            | ID:id
+                {: System.out.println("Id: " + id); :};
+
+constante ::= CTE_ENTERA:entero
+                {: System.out.println("Cte entera: " + entero); :}
+            | CTE_FLOTANTE:flotante
+                {: System.out.println("Cte flotante: " + flotante); :}
+            | CTE_CADENA:cadena
+                {: System.out.println("Cte cadena: " + cadena); :};
+
+io ::= lectura
+    | escritura;
+
+lectura ::= READ PAR_ABRIR ID:id PAR_CERRAR
+                {: System.out.println("Lectura de variable: " + id + "\n"); :};
+
+escritura ::= WRITE PAR_ABRIR CTE_CADENA:cadena PAR_CERRAR
+                {: System.out.println("Imprimir cadena: " + cadena); :}
+            | WRITE PAR_ABRIR ID:id PAR_CERRAR
+                {: System.out.println("Imprimir variable: " + id); :};
+
+if ::= IF PAR_ABRIR condicion PAR_CERRAR LLAVE_ABRIR sentencia LLAVE_CERRAR
+        {: System.out.println("IF con bloque \n"); :}
+    | IF PAR_ABRIR condicion PAR_CERRAR LLAVE_ABRIR sentencia LLAVE_CERRAR ELSE LLAVE_ABRIR sentencia LLAVE_CERRAR
+        {: System.out.println("IF-ELSE con bloques \n"); :};
+
+while ::= WHILE PAR_ABRIR condicion PAR_CERRAR LLAVE_ABRIR lista_sentencias LLAVE_CERRAR
+            {: System.out.println("WHILE con condicion y bloque \n"); :};
+
+condicion ::= expresion_logica
+            | NOT expresion_logica
+                {: System.out.println("Condicion con NOT"); :};
+
+expresion_logica ::= expresion operador_relacional expresion
+                        {: System.out.println("Condicion simple"); :}
+                  | expresion operador_relacional expresion AND expresion operador_relacional expresion
+                        {: System.out.println("Condicion con AND"); :}
+                  | expresion operador_relacional expresion OR expresion operador_relacional expresion
+                        {: System.out.println("Condicion con OR"); :};
+
+operador_relacional ::= COMP_MEN
+                        {: System.out.println("Operador <"); :}
+                    | COMP_MAY
+                        {: System.out.println("Operador >"); :};
